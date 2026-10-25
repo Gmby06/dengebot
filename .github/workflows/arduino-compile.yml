@@ -1,0 +1,35 @@
+name: Arduino board compilation
+on: [push, pull_request]
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - core: arduino:avr
+            fqbn: arduino:avr:uno
+          - core: arduino:avr
+            fqbn: arduino:avr:nano
+          - core: arduino:avr
+            fqbn: arduino:avr:mega
+          - core: esp8266:esp8266
+            fqbn: esp8266:esp8266:nodemcuv2
+          - core: esp32:esp32
+            fqbn: esp32:esp32:esp32
+          - core: esp32:esp32
+            fqbn: esp32:esp32:esp32s3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: arduino/setup-arduino-cli@v2
+      - name: Configure boards manager
+        run: |
+          arduino-cli config init
+          arduino-cli config set board_manager.additional_urls '["https://arduino.esp8266.com/stable/package_esp8266com_index.json","https://espressif.github.io/arduino-esp32/package_esp32_index.json"]'
+          arduino-cli core update-index
+          arduino-cli core install '${{ matrix.core }}'
+      # Core versions are intentionally not pinned yet; pin them after the first green run.
+      - name: Compile examples
+        run: |
+          arduino-cli compile --fqbn '${{ matrix.fqbn }}' --library . examples/BasicBalance
+          arduino-cli compile --fqbn '${{ matrix.fqbn }}' --library . examples/MotorCommandDemo
