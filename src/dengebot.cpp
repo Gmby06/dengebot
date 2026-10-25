@@ -25,7 +25,7 @@ EDABalancePID::EDABalancePID(const EDAPIDConfig &cfg):c_(cfg),configValid_(false
  reset();
  if(!configValid_)valid_=false;
 }
-static bool edaFinite(float x){return isfinite(x);}
+static bool edaFinite(float x){return (x==x)&&(x-x==0.0f);} // portable: no isfinite() macro/namespace issues on AVR/ESP cores
 static bool validConfig(const EDAPIDConfig &c){
  // All float fields checked, including disabled-feature parameters.
  const float vals[]={c.kp,c.ki,c.kd,c.iLimit,c.iEnableAngle,c.maxRateForI,c.iLeakPerSec,
