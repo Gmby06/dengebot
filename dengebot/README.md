@@ -1,0 +1,100 @@
+# dengebot v1.7.1 — Sensor Fusion & Telemetry (development preview)
+
+Hardware-independent, experimental Arduino-compatible two-wheel balancing control library.
+
+## What's new in v1.7.1
+- **Adaptive-filter fixes:** `setAlpha()` is rejected while adaptive mode is on if it would exceed the high-acceleration alpha (previously the "high" mode could end up trusting the gyro *less*); `setAdaptiveEnabled(true)` returns `false` in that situation.
+- **Default adaptive thresholds are now 0.03 g / 0.02 g** (were 0.15 g / 0.10 g). With the old defaults the mode never triggered in 50-run simulations: horizontal acceleration is perpendicular to gravity, so a 0.1 g acceleration changes `|a|` by only ~0.005 g. Adaptive mode is still **off by default**; the 3-argument `update()` is unchanged. The new thresholds are **simulation candidates** assuming ~0.01 g magnitude noise; measure your own IMU (motor vibration can need higher thresholds).
+- `EDATelemetry::printCSVExtended()` accepts `NaN` as "no reference" and prints an empty `pitch_ref_deg` field, so the extended format is usable on hardware without a reference. Suggested `EDATelemetryEvent` codes added (>=100 reserved for the application).
+- New `EDAGyroBiasCalibrator.h`: startup gyro-bias estimate from held-still samples with stationarity checks; `examples/GyroBiasCalibrationDemo` (synthetic input only).
+- PID, motor conversion and fixed-alpha filter behaviour are unchanged (bit-identical in the 50-run simulation).
+
+## What's new in v1.7.0
+- `EDAComplementaryFilter.h`: lightweight pitch complementary filter with configurable alpha (0..1), explicit reset/initialization, finite-input and time-step checks. **Caller must calculate accelerometer pitch and gyro pitch rate in consistent axes/units**; this is not an MPU driver.
+- `EDATelemetry.h`: no-allocation telemetry frame with Arduino Serial Plotter labeled output and CSV output for future tools. User controls reporting frequency; printing can block, so avoid excessive reporting in time-critical loops.
+- `examples/FilterTelemetryDemo`: **synthetic inputs only**, no motor control or physical balancing.
+- Host tests (including sanitizers) and Arduino CI example compile targets expanded. PID control behavior and motor command logic are unchanged; the PID source previously received a finite-value portability adjustment.
+
+## Install
+Arduino IDE > Sketch > Include Library > Add .ZIP Library. Include `EDADengeBot.h`, `EDAComplementaryFilter.h` or `EDATelemetry.h` as needed. Existing v1.6.1 sketches should remain source-compatible.
+
+## Complementary filter example
+```cpp
+#include <EDAComplementaryFilter.h>
+EDAComplementaryFilter filter(0.98f);
+// In loop, after reading a calibrated IMU:
+// if (filter.update(accelPitchDegrees, gyroPitchDegPerSecond, dtSeconds)) {
+//   float pitch = filter.pitchDegrees();
+// }
+```
+First valid reading initializes the estimate from accelerometer pitch. Subsequent readings use `alpha*(previousAngle + gyroRate*dt) + (1-alpha)*accelPitch`. The filter accepts dt between 0.0001 and 0.25 seconds; this is **not** the PID update time range (PID requires 0.004..0.050 s). Reject invalid sensor readings and disable motor drive through the caller's safety logic.
+
+## Telemetry
+`EDATelemetryFrame` stores timestamp, target pitch, measured pitch, gyro rate, PID output, motor command, loop duration, state and fault code. Call `EDATelemetry::printPlotter(Serial, frame)` or `EDATelemetry::printCSV(Serial, frame)`; CSV header is `EDATelemetry::csvHeader()`. Plotter and CSV are separate formats. For performance, print at a lower rate than the PID loop. The caller assigns state (0 stopped, 1 running, 2 fault) and fault code.
+
+## Existing capabilities
+`EDABalancePID` exposes configurable gyro-based PID, optional advanced recovery, anti-windup and fault status. `EDAMotorCommand.h` provides pure DC PWM/direction and stepper velocity/direction conversions; **not physical motor drivers**. No STEP pulse generator is provided. Physical balancing and NEMA17 stepper behavior remain unvalidated.
+
+## Supported compilation targets
+GitHub Actions is configured to compile examples on Arduino Uno, Nano, Mega, ESP8266 NodeMCU, ESP32 and ESP32-S3. The new v1.7.0 CI workflow must run successfully on GitHub before claiming verified board compilation.
+
+## Safety
+Motor outputs remain disabled in examples. Users must implement hardware motor disable, manual arming, sensor freshness checks, correct sign conventions, fall-angle shutdown and fault handling. A successful software test does not prove physical safety or stable balancing.
+
+## Testing
+Run `sh tests/run_host_tests.sh` (or `EDA_SANITIZE=1 sh tests/run_host_tests.sh` with supported sanitizers). Report hardware results via GitHub Issues.
+
+## License and attribution
+MIT License (see `LICENSE`). See `ACKNOWLEDGMENTS.md` for PID_v1 community attribution.
+
+## Optional adaptive filter (experimental)
+```cpp
+EDAComplementaryFilter filter(0.98f);
+filter.configureAdaptive(0.998f, 0.15f, 0.10f); // enter/exit |magnitude - 1g|
+filter.setAdaptiveEnabled(true);
+filter.setGyroBias(calibratedGyroBiasDegPerSec); // measure while stationary
+// after reading the IMU, with a fresh sample and measured acceleration magnitude:
+if (!filter.update(accelPitchDeg, gyroPitchRateDps, dtSeconds, accelMagnitudeG)) {
+  // Stop motor commands; last angle is stale until next valid update.
+}
+```
+The 3-argument `update()` always uses fixed alpha for backward compatibility.
+Acceleration magnitude is in g; compute it from calibrated X/Y/Z acceleration,
+not from the pitch angle. The 1g deviation heuristic cannot detect every
+accelerometer angle error. Hysteresis thresholds and alpha values are
+**simulation candidates**, not universal hardware defaults. `usedAlpha()`
+reports the last successful fusion weight. The first valid sample initializes
+from the accelerometer. `valid()` becomes false after invalid inputs; never
+use the retained angle to drive motors while invalid. `reset()` retains bias
+calibration and filter configuration but clears angle/validity.
+
+### Optional extended CSV for simulations
+`EDATelemetry::printCSVExtended(out, frame, pitchRefDeg, eventCode,
+sensorTimeMs, filter.usedAlpha())` adds reference pitch, integer event code,
+sensor sample timestamp and actual alpha. Header: `csvExtendedHeader()`.
+The existing `printCSV()` and `csvHeader()` remain unchanged. Only supply a
+reference pitch when you actually have one; do not invent ground truth on a
+physical robot. Printing can block and must be scheduled away from critical
+control timing.
+
+### Gyro bias calibration (recommended with high alpha)
+```cpp
+EDAGyroBiasCalibrator cal(100);            // ~1 s at 100 Hz
+// robot held perfectly still: cal.addSample(rawGyroPitchRateDps) every sample
+// if (cal.ready() && cal.stationary()) filter.setGyroBias(cal.bias());
+// else: robot moved or sensor fault -> do not apply, retry
+```
+Steady-state angle error from an uncorrected gyro bias `b` is about `alpha*dt/(1-alpha)*b`
+(0.49 s*b at alpha 0.98, ~2 s*b at 0.995, dt = 10 ms). Re-calibrate after warm-up.
+
+### Extended CSV event codes
+`EDA_EVENT_NONE=0, EDA_EVENT_DISTURBANCE=1, EDA_EVENT_FAULT=2, EDA_EVENT_ARMED=3,
+EDA_EVENT_DISARMED=4`; values >= 100 (`EDA_EVENT_USER_BASE`) are free for the application.
+
+### Evidence limitations
+The evidence for adaptive alpha comes from simulated inverted-pendulum runs with an assumed
+accelerometer-contamination model; a trigger driven by the *true* motor acceleration (not
+measurable) was strongest, while a magnitude-based trigger helps only with low thresholds.
+Physical validation is still required. The simulation's Kp/Kd values are **not** universal defaults.
+Simulation also showed that Kp=40/Kd=6 is near the stability limit (very little tolerance to
+sensor latency or gain error); Kp~20/Kd~3 was far more tolerant. Re-tune on your robot.
