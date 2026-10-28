@@ -1,0 +1,13 @@
+name: Host tests
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run host tests
+        run: sh tests/run_host_tests.sh
+      - name: Run host tests with sanitizers
+        run: EDA_SANITIZE=1 sh tests/run_host_tests.sh
