@@ -1,4 +1,46 @@
-# dengebot 1.6.1 — community preview
+# dengebot v1.7.1 — Adaptive Sensor Fusion & Stability Improvements
+
+**Open-source balancing robot controller library for Arduino-compatible platforms.**
+
+**Current release:** [v1.7.1 — Community Preview](https://github.com/Gmby06/dengebot/releases/tag/v1.7.1)
+
+## Version History
+
+### v1.7.1 — Adaptive Sensor Fusion & Stability Improvements
+- Adaptive complementary filtering with configurable alpha values.
+- Acceleration-based filtering with hysteresis.
+- Gyroscope bias calibration helper.
+- Improved sensor input validation and fault handling.
+- Expanded diagnostics and telemetry support.
+- Additional regression tests and Arduino examples.
+- Existing PID and motor-control behavior preserved.
+
+### v1.7.0 — Complementary Filter & Telemetry
+- Introduced complementary filtering for accelerometer and gyroscope fusion.
+- Added pitch-angle estimation support.
+- Added telemetry capabilities for tuning and analysis.
+- Extended test coverage.
+
+### v1.6.1 — Community Preview
+- Improved motor command safety and validation.
+- Added DC and stepper motor command conversion.
+- Expanded Arduino platform compilation tests.
+- Added host regression tests and sanitizer checks.
+- Preserved the existing PID mathematics.
+
+## Supported Platforms
+
+Arduino Uno, Nano, Mega 2560, ESP8266, ESP32 and ESP32-S3.
+
+## Important Note
+
+Adaptive sensor fusion is optional. Simulation results are encouraging, but comprehensive physical robot validation is ongoing. No universal improvement in balancing performance is guaranteed.
+
+For complete technical details, examples, installation instructions and safety guidance, see the sections below.
+
+--------------------------------------------------------------------------------------------------------------
+
+# dengebot v1.6.1 Technical Details
 
 ## Changes since 1.6.0
 - `EDAMotorCommand.h`: any non-finite command or invalid/non-finite limit now returns a **zero** command (1.6.0 saturated +-Inf commands and returned infinite steps/s for an infinite `maxStepsPerSecond`). `direction==0` now always means zero output; a command that rounds to PWM 0 no longer reports a direction. Ratio-first arithmetic avoids overflow for huge finite values.
