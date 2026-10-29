@@ -9,10 +9,11 @@ cat > "$T/Arduino.h" <<'STUB'
 struct EDAStubSerial{
   void begin(long){}
   template<class T> void print(T){}
+  template<class T> void print(T,int){}
   template<class T> void println(T){}
   void println(){}
 };
-extern EDAStubSerial Serial; void delay(unsigned long);
+extern EDAStubSerial Serial; void delay(unsigned long); unsigned long millis();
 STUB
 N=0
 for ino in "$D"/../examples/*/*.ino; do

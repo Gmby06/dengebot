@@ -1,5 +1,7 @@
 #ifndef EDA_DENGEBOT_LEGACY_H
 #define EDA_DENGEBOT_LEGACY_H
-// Legacy include for existing sketches. Prefer <EDADengeBot.h>.
+// Single public entry point; optional modules are not enabled by inclusion.
 #include "EDADengeBot.h"
+#include "EDAMotorCommand.h"
+#include "EDADeadZoneCompensation.h"
 #endif
