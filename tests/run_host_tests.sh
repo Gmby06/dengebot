@@ -17,5 +17,7 @@ c++ -std=c++11 -Wall -Wextra -Werror $SAN -I"$ROOT/src" "$ROOT/tests/filter_tele
 "$TMP/filter_telemetry"
 c++ -std=c++11 -Wall -Wextra -Werror $SAN -I"$ROOT/src" "$ROOT/tests/gyro_bias.cpp" -o "$TMP/gyro_bias"
 "$TMP/gyro_bias"
+c++ -std=c++11 -Wall -Wextra -Werror $SAN -I"$ROOT/src" "$ROOT/src/dengebot.cpp" "$ROOT/tests/unified_header.cpp" -o "$TMP/unified_header"
+"$TMP/unified_header"
 sh "$ROOT/tests/check_example.sh"
 echo 'All host tests passed'

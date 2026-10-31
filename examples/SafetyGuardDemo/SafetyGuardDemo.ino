@@ -14,9 +14,14 @@ void loop() {
   // Integration outline:
   // 1) Obtain a NEW IMU sample, record its real millis() timestamp.
   // 2) Validate sensor and convert pitch/rate to deg and deg/s.
-  // 3) On a NEW operator START event: safety.requestStart(now, sampleMs, pitch, valid, balance);
+  // 3) On a NEW operator START event: safety.requestStart(now, sampleMs, pitch, target, valid, balance);
   //    This can recover a latched FAULT without reboot, but only when safe.
   //    On a NEW STOP event: safety.stop() and disable motors immediately.
+  // 3b) The target-aware overload validates target error and resets PID immediately.
+  //     When setMaxAbsErrorDeg() is enabled, 5-argument START calls reject arming;
+  //     use the 6-argument call above with a mutable (non-const) PID.
+  //     If your balance target is not 0 deg, call safety.setMaxAbsErrorDeg(25.0f)
+  //     once in setup() so the fall limit is measured from the target.
   // 4) Every cycle: safety.update(balance, now, sampleMs, valid,
   //                              target, pitch, rate, rate, dtSeconds);
   // 5) If !safety.armed(): set motor PWM=0 AND disable driver EN.

@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.7.4 — Safety Guard Fixes (Community Preview)
+- Fixed the unified `dengebot.h` include guard collision; all existing modules remain available through the public header.
+- Added optional `setMaxAbsErrorDeg()` target-relative pitch-error protection while preserving the separate absolute pitch safety limit.
+- Added target-aware six-argument `start()`/`requestStart()` overloads that validate conditions before arming and immediately reset the mutable PID state on successful START.
+- Existing five-argument START overloads remain supported when the target-relative limit is disabled. When that limit is enabled they intentionally reject START, because no target angle is supplied. Check the returned boolean before enabling motors.
+- Existing overloads defer PID reset until the first guarded `update()`; avoid using stale PID outputs directly between START and the first update.
+- Centralized sensor-sample validation; clarified legacy versus target-aware START fault-state behavior; added regression tests.
+- Updated GitHub Actions board compilation matrix to compile all six examples. The updated workflow must be checked on GitHub after upload.
+- Local host tests and ASan/UBSan pass. The Nano integration was reported to compile and pass START/STOP, fall-angle stop and fault recovery tests; this is limited physical validation, not a hardware safety certification.
+- No PID control mathematics changes. PWM threshold calibration is planned for v1.7.5.
+
 ## v1.7.3 — STOP/FAULT Safety Update (Community Preview)
 - Added optional `EDASafetyGuard` for initial STOP, explicit START/arming, latched FAULT handling, sensor freshness/validity checks, and fall-angle protection.
 - Added `requestStart()` for explicit operator-initiated recovery from a latched FAULT when safe-start conditions are satisfied, without rebooting the controller. Recovery is not automatic.

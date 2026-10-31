@@ -1,8 +1,12 @@
-#ifndef EDA_DENGEBOT_LEGACY_H
-#define EDA_DENGEBOT_LEGACY_H
-// Single public entry point; optional modules are not enabled by inclusion.
+#ifndef EDA_DENGEBOT_UMBRELLA_H
+#define EDA_DENGEBOT_UMBRELLA_H
+// Single public entry point for every module. Including this header does not
+// enable optional behavior; each feature is used only when you call it.
 #include "EDADengeBot.h"
 #include "EDASafetyGuard.h"
 #include "EDAMotorCommand.h"
 #include "EDADeadZoneCompensation.h"
+#include "EDAComplementaryFilter.h"
+#include "EDATelemetry.h"
+#include "EDAGyroBiasCalibrator.h"
 #endif
