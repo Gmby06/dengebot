@@ -39,6 +39,8 @@ Important Safety Notice
 
 dengebot provides software-level safety mechanisms. Applications must still properly disable motor-driver EN/PWM outputs during STOP or FAULT conditions.
 For safety-critical applications, additional independent hardware protection and watchdog mechanisms are recommended.
+
+
 ----------------------------------------------------------------------------------------------------------
 
 # dengebot v1.7.4 — Safety Guard Fixes (Community Preview)
