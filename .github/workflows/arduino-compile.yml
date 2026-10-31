@@ -36,3 +36,7 @@ jobs:
         run: |
           arduino-cli compile --fqbn '${{ matrix.fqbn }}' --library . examples/BasicBalance
           arduino-cli compile --fqbn '${{ matrix.fqbn }}' --library . examples/MotorCommandDemo
+          arduino-cli compile --fqbn '${{ matrix.fqbn }}' --library . examples/FilterTelemetryDemo
+          arduino-cli compile --fqbn '${{ matrix.fqbn }}' --library . examples/GyroBiasCalibrationDemo
+          arduino-cli compile --fqbn '${{ matrix.fqbn }}' --library . examples/DeadZoneDemo
+          arduino-cli compile --fqbn '${{ matrix.fqbn }}' --library . examples/SafetyGuardDemo
