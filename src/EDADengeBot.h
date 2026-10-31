@@ -46,7 +46,20 @@ public:
  void clearFault();
  bool configValid() const {return configValid_;}
  float lastOutput() const {return lastOutput_;}
- // update(): yeni gecerli IMU ornegi icin dt=0.004..0.050 saniye. Hata motor komutu degildir.
+ // update() input contract (angles in degrees, angular rates in deg/s, dt in seconds):
+ // target: desired pitch angle in degrees, same axis/sign convention as pitch.
+ // pitch: current fused/measured pitch angle in degrees (NOT radians).
+ // verifiedRate: fresh, validated pitch-axis angular velocity (deg/s), normally
+ //   gyro pitch rate after bias correction; used by D, recovery and safety logic.
+ //   POSITIVE rate MUST mean pitch is INCREASING (d(pitch)/dt > 0).
+ // pitchRate: pitch-axis angular velocity (deg/s) for the optional assist path;
+ //   same POSITIVE direction as verifiedRate. It may be the SAME fresh gyro
+ //   rate if no independent estimate is available (as in BasicBalance).
+ //   It is NOT a motor RPM, an angle, or a required second sensor.
+ // dt: elapsed time since the previous fresh sample, 0.004..0.050 seconds.
+ // Invalid numeric inputs/time steps produce fault/zero on that update; callers
+ // MUST independently check IMU freshness, fall-angle and motor-enable state.
+ // This returns a control command, NOT a hardware motor-enable or PWM signal.
  float update(float target,float pitch,float verifiedRate,float pitchRate,float dt);
  float pTerm()const{return p_;} float iTerm()const{return i_;}
  float dTerm()const{return d_;} float filteredRate()const{return rate_;}

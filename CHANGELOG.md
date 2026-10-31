@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.7.3 — STOP/FAULT Safety Update (Community Preview)
+- Added optional `EDASafetyGuard` for initial STOP, explicit START/arming, latched FAULT handling, sensor freshness/validity checks, and fall-angle protection.
+- Added `requestStart()` for explicit operator-initiated recovery from a latched FAULT when safe-start conditions are satisfied, without rebooting the controller. Recovery is not automatic.
+- Added safety demonstration and host regression tests. Existing PID control mathematics and APIs remain unchanged.
+- Compilation was reported successful across multiple Arduino AVR, ESP8266, and ESP32 board profiles.
+- On one Arduino Nano balancing-robot integration, START/STOP, fall-angle-triggered motor shutdown, and FAULT recovery after returning upright were physically tested successfully.
+- Safety behavior depends on correct application integration: the application must enforce motor-driver EN/PWM shutdown. Physical validation on one robot does not establish safety on all boards, sensors, or motor drivers.
+- PWM threshold calibration is planned for v1.7.4 and is not part of this release.
+
 ## 1.7.1 (development preview)
 - Fixed: `setAlpha()` could be set above the adaptive high alpha (inverted adaptive mode); now rejected while adaptive is enabled. `setAdaptiveEnabled()` returns bool.
 - Changed: default adaptive thresholds 0.15/0.10 g -> 0.03/0.02 g (adaptive remains opt-in).
@@ -31,3 +40,4 @@
 - Physical robot validation pending; do not treat as a verified release.
 
 - v1.7.2 test: unified `<dengebot.h>` public entry point, preserving separate headers for compatibility.
+

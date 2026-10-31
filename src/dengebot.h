@@ -2,6 +2,7 @@
 #define EDA_DENGEBOT_LEGACY_H
 // Single public entry point; optional modules are not enabled by inclusion.
 #include "EDADengeBot.h"
+#include "EDASafetyGuard.h"
 #include "EDAMotorCommand.h"
 #include "EDADeadZoneCompensation.h"
 #endif
