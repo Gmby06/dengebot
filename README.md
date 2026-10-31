@@ -1,3 +1,46 @@
+dengebot v1.7.4 – Safety Guard Fixes
+
+This release focuses on improving safety, reliability, and fault recovery for two-wheel self-balancing robots using the dengebot Arduino library.
+
+[Download v1.7.4](https://github.com/Gmby06/dengebot/releases/tag/v1.7.4) · [Report an issue](https://github.com/Gmby06/dengebot/issues) · [License](LICENSE)
+
+What's New and Improved
+
+Fixed Header Conflicts: Resolved include guard conflicts between public and internal library headers.
+Safer START/STOP Handling: Improved controller initialization and PID state reset during safe re-arming.
+Target-Relative Fall Protection: Added optional setMaxAbsErrorDeg() to detect excessive tilt relative to the configured balance target.
+Improved FAULT Recovery: Strengthened validation when restarting after a safety fault, without requiring a board reboot.
+Enhanced Sensor Safety: Improved validation of sensor readings and startup conditions.
+Expanded Regression Testing: Added safety-focused tests and improved Arduino compilation coverage.
+
+Compatibility
+
+The library supports the Arduino framework on:
+
+Arduino Uno
+Arduino Nano
+Arduino Mega 2560
+ESP8266
+ESP32
+ESP32-S3
+
+GitHub Actions: All six board configurations passed.
+
+Physical Testing
+
+Safety behavior was tested on an Arduino Nano-based two-wheel balancing robot, including:
+START and STOP operation
+Fall-angle protection
+FAULT detection and recovery
+Restarting safely without rebooting
+These results reflect the tested hardware configuration; additional community testing is encouraged.
+
+Important Safety Notice
+
+dengebot provides software-level safety mechanisms. Applications must still properly disable motor-driver EN/PWM outputs during STOP or FAULT conditions.
+For safety-critical applications, additional independent hardware protection and watchdog mechanisms are recommended.
+----------------------------------------------------------------------------------------------------------
+
 # dengebot v1.7.4 — Safety Guard Fixes (Community Preview)
 
 Hardware-independent Arduino-compatible control library for two-wheel balancing robots. It provides control algorithms, sensor fusion, telemetry, optional DC motor dead-zone compensation, and optional software safety interlocks. **It is a library, not a ready-to-run robot firmware or motor driver.**
