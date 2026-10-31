@@ -1,6 +1,23 @@
-# dengebot v1.7.2 — Sensor Fusion, Telemetry & Dead-Zone Compensation (test candidate)
+# dengebot v1.7.3 — STOP/FAULT Safety Update (Community Preview)
 
-Hardware-independent, experimental Arduino-compatible two-wheel balancing control library.
+Hardware-independent Arduino-compatible control library for two-wheel balancing robots. It provides control algorithms, sensor fusion, telemetry, optional DC motor dead-zone compensation, and optional software safety interlocks. **It is a library, not a ready-to-run robot firmware or motor driver.**
+
+[Download v1.7.3](https://github.com/Gmby06/dengebot/releases/tag/v1.7.3) · [Report an issue](https://github.com/Gmby06/dengebot/issues) · [License](LICENSE)
+
+## What's new in v1.7.3
+- **Optional `EDASafetyGuard`:** initial STOP state, explicit operator START, latched STOP/FAULT management, sensor freshness/validity checks, fall-angle checks, and controller fault handling.
+- **Safe re-arming with `requestStart()`:** after investigating a FAULT, an explicit new START command can re-arm when the latest sensor data is valid/fresh, pitch is within configured limits, and the PID is healthy. No controller reboot or Wi-Fi reconnection is required by the library.
+- **Safety examples and regression tests:** hardware-independent examples and host tests accompany the safety guard.
+- **Existing PID mathematics and public APIs preserved.** Safety and dead-zone compensation are opt-in.
+- **Testing:** GitHub Actions checks passed; example compilation was tested across multiple AVR, ESP8266 and ESP32-family board profiles. START/STOP, fall-angle motor stop, and re-START after FAULT were tested on one Arduino Nano balancing robot. Other motor drivers and board combinations have not been physically validated.
+
+**Important:** `EDASafetyGuard` returns a software motor command and maintains a software state. Your sketch must *physically disable motor PWM/driver outputs* on STOP/FAULT and implement appropriate timing supervision. It is not a certified emergency-stop system.
+
+**Next planned release:** v1.7.4 — optional PWM movement-threshold calibration tools; not part of v1.7.3.
+
+## What's new in v1.7.2
+- Optional `EDADeadZoneCompensation.h` for DC motor dead-zone mapping, without changing existing `toDC()` behavior.
+- Unified header `#include <dengebot.h>` and optional `DeadZoneDemo` example.
 
 ## What's new in v1.7.1
 - **Adaptive-filter fixes:** `setAlpha()` is rejected while adaptive mode is on if it would exceed the high-acceleration alpha (previously the "high" mode could end up trusting the gyro *less*); `setAdaptiveEnabled(true)` returns `false` in that situation.
@@ -16,7 +33,7 @@ Hardware-independent, experimental Arduino-compatible two-wheel balancing contro
 - Host tests (including sanitizers) and Arduino CI example compile targets expanded. PID control behavior and motor command logic are unchanged; the PID source previously received a finite-value portability adjustment.
 
 ## Install
-Arduino IDE > Sketch > Include Library > Add .ZIP Library. Include `EDADengeBot.h`, `EDAComplementaryFilter.h` or `EDATelemetry.h` as needed. Existing v1.6.1 sketches should remain source-compatible.
+Download the library ZIP from [v1.7.3 Releases](https://github.com/Gmby06/dengebot/releases/tag/v1.7.3). In Arduino IDE select **Sketch > Include Library > Add .ZIP Library**. Prefer `#include <dengebot.h>` for the unified public header. Individual headers such as `EDADengeBot.h`, `EDAComplementaryFilter.h` and `EDATelemetry.h` remain available. Include the relevant header and explicitly configure optional features; installing the library does not automatically arm motors.
 
 ## Complementary filter example
 ```cpp
@@ -36,10 +53,10 @@ First valid reading initializes the estimate from accelerometer pitch. Subsequen
 `EDABalancePID` exposes configurable gyro-based PID, optional advanced recovery, anti-windup and fault status. `EDAMotorCommand.h` provides pure DC PWM/direction and stepper velocity/direction conversions; **not physical motor drivers**. No STEP pulse generator is provided. Physical balancing and NEMA17 stepper behavior remain unvalidated.
 
 ## Supported compilation targets
-GitHub Actions is configured to compile examples on Arduino Uno, Nano, Mega, ESP8266 NodeMCU, ESP32 and ESP32-S3. The new v1.7.0 CI workflow must run successfully on GitHub before claiming verified board compilation.
+GitHub Actions compiles example sketches on configured Arduino Uno, Nano, Mega, ESP8266, ESP32 and ESP32-S3 targets. v1.7.3 Actions checks passed. Successful compilation is not proof of correct behavior on every motor driver or physical robot.
 
 ## Safety
-Motor outputs remain disabled in examples. Users must implement hardware motor disable, manual arming, sensor freshness checks, correct sign conventions, fall-angle shutdown and fault handling. A successful software test does not prove physical safety or stable balancing.
+Motor-driving examples do not operate a specific physical motor driver. Optional `EDASafetyGuard` provides software STOP/FAULT gating, but users must implement physical motor disable, correct IMU axes and sign conventions, fresh sensor acquisition, and safe motor-driver behavior. A successful software test does not prove physical safety or stable balancing.
 
 ## Testing
 Run `sh tests/run_host_tests.sh` (or `EDA_SANITIZE=1 sh tests/run_host_tests.sh` with supported sanitizers). Report hardware results via GitHub Issues.
@@ -99,7 +116,7 @@ Physical validation is still required. The simulation's Kp/Kd values are **not**
 Simulation also showed that Kp=40/Kd=6 is near the stability limit (very little tolerance to
 sensor latency or gain error); Kp~20/Kd~3 was far more tolerant. Re-tune on your robot.
 
-## v1.7.2 candidate: optional DC dead-zone compensation
+## v1.7.2: optional DC dead-zone compensation
 
 Include `<EDADeadZoneCompensation.h>` and call:
 
@@ -143,18 +160,17 @@ float command = balance.update(targetDeg, pitchDeg,
 
 **Example sensor-to-controller flow (pseudocode):** read a new IMU sample → check read success, age and finite values → calibrate/correct gyro bias → estimate pitch in degrees → choose gyro pitch-axis rate in deg/s with matching sign → compute `dt` from sample timestamps → call `update(target, pitch, gyroRate, gyroRate, dt)` → check `lastUpdateValid()`, `faulted()`, sample freshness, fall-angle and arming state → only then apply motor command through the application driver. The same rate is deliberately passed twice when no separate pitch-rate estimator is available. Avoid subtracting gyro bias twice.
 
-**Safety evidence boundary:** Host tests verify software behavior, not a physical emergency-stop or a motor driver. The application must implement independent hardware motor disable, stale-sample timeout, fall-angle shutdown and manual re-arming. Test motor polarity with wheels off the ground; then verify unplugged/stale IMU, extreme tilt, STOP button, driver enable disable and restart prevention under a guarded test rig. **No new physical validation is claimed by this documentation change.**
+**Safety evidence boundary:** Host tests verify software behavior, not a physical emergency-stop or a motor driver. The application must implement independent hardware motor disable, stale-sample timeout, fall-angle shutdown and manual re-arming. Test motor polarity with wheels off the ground; then verify unplugged/stale IMU, extreme tilt, STOP button, driver enable disable and restart prevention under a guarded test rig. **The v1.7.2 documentation change alone does not establish physical safety; limited v1.7.3 Nano testing is described above.**
 
-**CI coverage:** The Arduino workflow now compiles `DeadZoneDemo` alongside the other examples for its configured AVR, ESP8266 and ESP32 targets. CI results must be confirmed after pushing this revision; local host-test success is not evidence of a GitHub Actions run.
+**CI coverage:** The Arduino workflow now compiles `DeadZoneDemo` alongside the other examples for its configured AVR, ESP8266 and ESP32 targets. The v1.7.3 GitHub Actions checks were reported as passing; local host tests alone do not prove physical behavior.
 
 
-## v1.7.3 candidate: optional STOP/FAULT safety guard
+## v1.7.3: optional STOP/FAULT safety guard
 
 `EDASafetyGuard.h` adds an **opt-in**, hardware-independent command interlock. It starts
-**STOPPED**, requires an explicit `start()` call with a fresh valid IMU sample,
+**STOPPED**, requires an explicit operator START event with a fresh valid IMU sample,
 and latches faults for stale data, invalid readings, excessive pitch, or PID faults.
-On STOP/FAULT, `update()` returns **zero command** and requires an explicit
-`clearFault()` followed by `start()` to re-arm. `stop()` never clears a latched fault.
+On STOP/FAULT, `update()` returns **zero command**. On a **new** operator START event, `requestStart()` can clear a safety FAULT and re-arm *if all safety checks pass*. The existing `start()` and `clearFault()` methods remain available. `stop()` never clears a latched fault.
 
 ```cpp
 #include <dengebot.h>
@@ -169,8 +185,10 @@ EDASafetyGuard safety(safetyConfig);
 //                           targetDeg, pitchDeg, gyroDps, gyroDps, dtSeconds);
 // if (!safety.armed()) { /* hardware motor-enable OFF, PWM=0 */ }
 // To STOP: safety.stop(); /* hardware motor-enable OFF immediately */
-// To recover: stop motors, investigate fault, pid.clearFault(),
-//             safety.clearFault(), then explicitly safety.start(...) with fresh data.
+// To recover: stop motors, investigate the cause and resolve any PID fault.
+// On a NEW operator START event, with fresh valid IMU data:
+// bool armed = safety.requestStart(millis(), imuSampleTimestampMs,
+//                                  pitchDeg, imuValid, pid);
 ```
 
 **Critical safety boundary:** This class returns a software command only. It does
@@ -186,11 +204,8 @@ on every iteration unless a new IMU sample was actually acquired. `dt` remains i
 absolute pitch (not pitch error); select it for the physical robot. `sensorValid`
 must be false for failed IMU reads or failed sensor checks.
 
-**Validation status:** Host tests cover STOP, stale sample, invalid sensor, fall
-angle, controller fault, manual reset and millisecond timer wraparound. These are
-software tests only; physical motor cut-off and real robot fall tests are **not
-validated** by these tests. Test with wheels raised and motor power isolated first.
+**Validation status:** Host tests cover STOP, stale samples, invalid sensor input, fall angle, controller faults, manual reset and millisecond timer wraparound. Separately, START/STOP, fall-angle motor stop, and re-START after FAULT were physically tested on one Arduino Nano balancing robot. This does not validate emergency-stop hardware or other motor drivers. Begin hardware checks with wheels raised and a reliable physical motor-disable path.
 
-### v1.7.3 candidate: operator-controlled FAULT recovery
+### v1.7.3: operator-controlled FAULT recovery
 
 `EDASafetyGuard::requestStart(nowMs, sampleMs, pitch, sensorValid, pid)` handles a **new** START event from a button, Wi-Fi or other input. When stopped or faulted, it checks a fresh, valid, upright IMU sample and a healthy PID controller; only then does it clear the latched safety fault and arm. Unsafe attempts retain the fault. Do **not** call continuously while a button is held or a network command remains set. The older `start()` and `clearFault()` APIs remain available. An underlying PID fault must be resolved/reset separately before requesting START. Motor PWM and driver enable must be physically shut off by the application on STOP/FAULT; this class alone cannot enforce that.
