@@ -9,17 +9,17 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - core: arduino:avr
+          - core: arduino:avr@1.8.6
             fqbn: arduino:avr:uno
-          - core: arduino:avr
+          - core: arduino:avr@1.8.6
             fqbn: arduino:avr:nano
-          - core: arduino:avr
+          - core: arduino:avr@1.8.6
             fqbn: arduino:avr:mega
-          - core: esp8266:esp8266
+          - core: esp8266:esp8266@3.1.2
             fqbn: esp8266:esp8266:nodemcuv2
-          - core: esp32:esp32
+          - core: esp32:esp32@2.0.17
             fqbn: esp32:esp32:esp32
-          - core: esp32:esp32
+          - core: esp32:esp32@2.0.17
             fqbn: esp32:esp32:esp32s3
     steps:
       - uses: actions/checkout@v4
@@ -31,7 +31,7 @@ jobs:
           arduino-cli config add board_manager.additional_urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
           arduino-cli core update-index
           arduino-cli core install '${{ matrix.core }}'
-      # Core versions are intentionally not pinned yet; pin them after the first green run.
+      # Core versions are pinned so release builds do not change over time. Update deliberately.
       - name: Compile examples
         run: |
           arduino-cli compile --fqbn '${{ matrix.fqbn }}' --library . examples/BasicBalance
@@ -40,3 +40,30 @@ jobs:
           arduino-cli compile --fqbn '${{ matrix.fqbn }}' --library . examples/GyroBiasCalibrationDemo
           arduino-cli compile --fqbn '${{ matrix.fqbn }}' --library . examples/DeadZoneDemo
           arduino-cli compile --fqbn '${{ matrix.fqbn }}' --library . examples/SafetyGuardDemo
+          arduino-cli compile --fqbn '${{ matrix.fqbn }}' --library . examples/PwmCalibrationDemo
+
+  gemma:
+    # Gemma / ATtiny85 has no Serial: only the inert PWM demo must compile there.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: arduino/setup-arduino-cli@v2
+      - name: Compile inert demo for Gemma
+        run: |
+          arduino-cli config init
+          arduino-cli config add board_manager.additional_urls https://adafruit.github.io/arduino-board-index/package_adafruit_index.json
+          arduino-cli core update-index
+          arduino-cli core install adafruit:avr
+          arduino-cli compile --fqbn adafruit:avr:gemma --library . examples/PwmCalibrationDemo
+
+name: Host tests
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run host tests
+        run: sh tests/run_host_tests.sh
+      - name: Run host tests with sanitizers
+        run: EDA_SANITIZE=1 sh tests/run_host_tests.sh
