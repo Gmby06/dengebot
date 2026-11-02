@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.7.5 — Safe PWM Motor Calibration (Community Preview)
+## v1.7.5 — Safe PWM Motor Calibration
 ### Review fixes and release adjustments
 - `PwmCalibration::begin()` now invalidates the stored result of the selected wheel/direction (new `PwmCalibrationResults::clear()`); an aborted or timed-out re-run no longer leaves the old value confirmed. Refused `begin()` calls change nothing; other slots are kept.
 - `PwmCalibration::valid()` rejects `idleTimeoutMs` / `maxSessionMs` above `0x7fffffff` (the wrap-safe comparison treats larger differences as errors). `EDASafetyConfig::maxSampleAgeMs` has the same upper bound in `EDASafetyGuard::validConfig()`.
