@@ -54,4 +54,5 @@ jobs:
           arduino-cli config add board_manager.additional_urls https://adafruit.github.io/arduino-board-index/package_adafruit_index.json
           arduino-cli core update-index
           arduino-cli core install arduino:avr@1.8.6
+          arduino-cli core install adafruit:avr
           arduino-cli compile --fqbn adafruit:avr:gemma --library . examples/PwmCalibrationDemo
