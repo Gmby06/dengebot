@@ -2,7 +2,7 @@
 
 **Arduino-compatible control library for two-wheel self-balancing robots.**
 
-**Release package: v1.7.5 — Safe PWM Motor Calibration (Community Preview)**
+**Release package: v1.7.5 — Safe PWM Motor Calibration**
 
 [v1.7.5 releases](https://github.com/Gmby06/dengebot/releases/tag/v1.7.5) · [Examples](examples) · [Changelog](CHANGELOG.md) · [Report an issue](https://github.com/Gmby06/dengebot/issues) · [MIT License](LICENSE)
 
