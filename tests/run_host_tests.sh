@@ -19,5 +19,21 @@ c++ -std=c++11 -Wall -Wextra -Werror $SAN -I"$ROOT/src" "$ROOT/tests/gyro_bias.c
 "$TMP/gyro_bias"
 c++ -std=c++11 -Wall -Wextra -Werror $SAN -I"$ROOT/src" "$ROOT/src/dengebot.cpp" "$ROOT/tests/unified_header.cpp" -o "$TMP/unified_header"
 "$TMP/unified_header"
+c++ -std=c++11 -Wall -Wextra -Werror $SAN -I"$ROOT/src" "$ROOT/tests/pwm_demo_safety.cpp" -o "$TMP/pwm_demo_safety"
+"$TMP/pwm_demo_safety"
 sh "$ROOT/tests/check_example.sh"
+# The active motor demo is compiled only for boards its pin map was written for.
+for BOARD in ARDUINO_AVR_NANO ARDUINO_AVR_UNO ARDUINO_AVR_MEGA2560; do
+  c++ -std=c++11 -Wall -Wextra -Werror $SAN -DARDUINO_ARCH_AVR -D$BOARD -I"$ROOT/tests/fake_arduino" -I"$ROOT/src" "$ROOT/tests/demo_harness.cpp" -o "$TMP/demo_harness"
+  "$TMP/demo_harness"
+done
+# Non-AVR and unsupported AVR boards (Gemma/ATtiny85, Leonardo, generic AVR): demo must touch no pin.
+c++ -std=c++11 -Wall -Wextra -Werror $SAN -I"$ROOT/tests/fake_arduino" -I"$ROOT/src" "$ROOT/tests/demo_inert_nonavr.cpp" -o "$TMP/demo_inert_nonavr"
+"$TMP/demo_inert_nonavr"
+for BOARD in ARDUINO_AVR_LEONARDO ARDUINO_AVR_GEMMA ARDUINO_AVR_PRO; do
+  c++ -std=c++11 -Wall -Wextra -Werror $SAN -DARDUINO_ARCH_AVR -D$BOARD -I"$ROOT/tests/fake_arduino" -I"$ROOT/src" "$ROOT/tests/demo_inert_nonavr.cpp" -o "$TMP/demo_inert_otheravr"
+  "$TMP/demo_inert_otheravr"
+done
+c++ -std=c++11 -Wall -Wextra -Werror $SAN -I"$ROOT/src" "$ROOT/tests/pwm_calibration.cpp" -o "$TMP/pwm_calibration"
+"$TMP/pwm_calibration"
 echo 'All host tests passed'

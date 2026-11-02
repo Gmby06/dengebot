@@ -77,6 +77,7 @@ bool EDABalancePID::setTunings(float kp,float ki,float kd,bool resetIntegral){
  return true;
 }
 void EDABalancePID::reset(float initialRate){
+ if(!edaFinite(initialRate))initialRate=0.0f; // a non-finite seed must not poison the filter state
  valid_=configValid_;lastOutput_=0;
  integral_=p_=i_=d_=assist_=peakError_=0;
  rate_=recoveryRate_=slowRate_=initialRate;

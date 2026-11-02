@@ -10,12 +10,13 @@
 // Caller MUST supply a real IMU sample timestamp, not simply 'now' each loop.
 // Caller MUST still disable motor-driver EN/PWM in hardware/application on STOP/FAULT.
 enum class EDASafetyFault : uint8_t {
-  None, Stopped, StaleSensor, InvalidSensor, Fallen, ControllerFault
+  None, Stopped, StaleSensor, InvalidSensor, Fallen, ControllerFault,
+  InvalidConfig   // appended in v1.7.5; earlier values are unchanged
 };
 
 struct EDASafetyConfig {
   float maxAbsPitchDeg;        // absolute measured pitch limit; > 0
-  uint32_t maxSampleAgeMs;     // > 0; wrap-safe unsigned subtraction
+  uint32_t maxSampleAgeMs;     // 1..0x7fffffff; wrap-safe unsigned subtraction
 };
 
 class EDASafetyGuard {
@@ -23,10 +24,11 @@ public:
   explicit EDASafetyGuard(const EDASafetyConfig& cfg)
     : cfg_(cfg), maxAbsErrorDeg_(0.0f), armed_(false), resetPending_(false),
       fault_(EDASafetyFault::Stopped) {
-    if (!validConfig(cfg_)) fault_ = EDASafetyFault::InvalidSensor;
+    if (!validConfig(cfg_)) fault_ = EDASafetyFault::InvalidConfig;
   }
   static bool validConfig(const EDASafetyConfig& c) {
-    return eda_detail::finiteFloat(c.maxAbsPitchDeg) && c.maxAbsPitchDeg > 0.0f && c.maxSampleAgeMs > 0;
+    return eda_detail::finiteFloat(c.maxAbsPitchDeg) && c.maxAbsPitchDeg > 0.0f &&
+           c.maxSampleAgeMs > 0 && c.maxSampleAgeMs <= 0x7ffffffful;   // wrap-safe age check rejects larger values
   }
   // Optional (v1.7.4): ALSO trip Fallen when |pitch - target| exceeds this many
   // degrees. Use it when the balance target is not 0 deg (e.g. -3.85) so the fall
@@ -57,8 +59,6 @@ public:
   // limit enabled it cannot verify safe arming, so it FAILS CLOSED.
   // Use the 6-argument overload instead; with target limit disabled the legacy
   // API remains source- and behavior-compatible.
-  // NOTE: failed legacy start() may latch a sensor FAULT through checkSample(),
-  // whereas the target-aware overload validates without side effects.
   bool start(uint32_t nowMs, uint32_t sampleMs, float pitch, bool sensorValid, const EDABalancePID& pid) {
     if (maxAbsErrorDeg_ > 0.0f || fault_ != EDASafetyFault::Stopped || pid.faulted() || !pid.configValid()) return false;
     if (!checkSample(nowMs, sampleMs, pitch, sensorValid)) return false;
@@ -75,7 +75,10 @@ public:
     if (armed_ || maxAbsErrorDeg_ > 0.0f) return false; // Legacy path cannot validate target.
     if (!validConfig(cfg_) || pid.faulted() || !pid.configValid()) return false;
     // Evaluate without mutating the original latched FAULT on failure.
-    if (!sampleSafe(nowMs, sampleMs, pitch, sensorValid)) return false;
+    if (!sensorValid || !eda_detail::finiteFloat(pitch)) return false;
+    const uint32_t age = nowMs - sampleMs;
+    if (age > cfg_.maxSampleAgeMs || age > 0x7ffffffful) return false;
+    if (fabsf(pitch) > cfg_.maxAbsPitchDeg) return false;
     // Preconditions passed: explicit operator request authorizes recovery.
     fault_ = EDASafetyFault::Stopped;
     return start(nowMs, sampleMs, pitch, sensorValid, pid);
@@ -132,25 +135,21 @@ private:
         fabsf(pitch - target) > maxAbsErrorDeg_) return false;
     return true;
   }
-  // Side-effect-free sample validation shared by START and update().
-  // Keeping fault classification in one place prevents guard paths drifting.
-  EDASafetyFault sampleFailure(uint32_t nowMs, uint32_t sampleMs,
-                               float pitch, bool sensorValid) const {
-    if (!sensorValid || !eda_detail::finiteFloat(pitch)) return EDASafetyFault::InvalidSensor;
-    // Unsigned subtraction supports millis() wrap; large age rejects future timestamps.
-    const uint32_t age = nowMs - sampleMs;
-    if (age > cfg_.maxSampleAgeMs || age > 0x7ffffffful) return EDASafetyFault::StaleSensor;
-    if (fabsf(pitch) > cfg_.maxAbsPitchDeg) return EDASafetyFault::Fallen;
-    return EDASafetyFault::None;
-  }
   bool sampleSafe(uint32_t nowMs, uint32_t sampleMs, float pitch, bool sensorValid) const {
-    return sampleFailure(nowMs, sampleMs, pitch, sensorValid) == EDASafetyFault::None;
+    if (!sensorValid || !eda_detail::finiteFloat(pitch)) return false;
+    const uint32_t age = nowMs - sampleMs;
+    return age <= cfg_.maxSampleAgeMs && age <= 0x7ffffffful &&
+           fabsf(pitch) <= cfg_.maxAbsPitchDeg;
   }
   bool checkSample(uint32_t nowMs, uint32_t sampleMs, float pitch, bool sensorValid) {
-    const EDASafetyFault failure = sampleFailure(nowMs, sampleMs, pitch, sensorValid);
-    if (failure == EDASafetyFault::None) return true;
-    trip(failure);
-    return false;
+    if (!sensorValid || !eda_detail::finiteFloat(pitch)) { trip(EDASafetyFault::InvalidSensor); return false; }
+    // Reject timestamps in the future (including erroneous timebase mismatch).
+    const uint32_t age = nowMs - sampleMs;
+    if (age > cfg_.maxSampleAgeMs || age > 0x7ffffffful) {
+      trip(EDASafetyFault::StaleSensor); return false;
+    }
+    if (fabsf(pitch) > cfg_.maxAbsPitchDeg) { trip(EDASafetyFault::Fallen); return false; }
+    return true;
   }
   EDASafetyConfig cfg_;
   float maxAbsErrorDeg_;

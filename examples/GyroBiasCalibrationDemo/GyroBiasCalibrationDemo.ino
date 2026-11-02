@@ -6,11 +6,13 @@
 EDAComplementaryFilter pitchFilter(0.98f);
 EDAGyroBiasCalibrator calibrator(100);
 unsigned long lastMs = 0;
+bool biasApplied = false;   // startup calibration runs once; it is retried only after a rejection
 void setup() {
   Serial.begin(115200);
   lastMs = millis();
 }
 void loop() {
+  if (biasApplied) return;   // one-shot startup calibration is finished
   const unsigned long now = millis();
   if ((unsigned long)(now - lastMs) < 10UL) return;
   lastMs = now;
@@ -21,6 +23,7 @@ void loop() {
   }
   if (calibrator.stationary() && pitchFilter.setGyroBias(calibrator.bias())) {
     Serial.println("bias applied");
+    biasApplied = true;
   } else {
     Serial.println("calibration rejected: robot moved or sensor fault");
   }

@@ -31,7 +31,7 @@ public:
   bool failed() const { return invalid_; }
   bool ready() const { return !invalid_ && n_ >= minSamples_; }
   float bias() const { return mean_; }
-  float stdDev() const { return n_ > 1 ? sqrtf(m2_ / (float)(n_ - 1)) : 0.0f; }
+  float stdDev() const { return (n_ > 1 && m2_ > 0.0f) ? sqrtf(m2_ / (float)(n_ - 1)) : 0.0f; }
   // true only if enough samples AND the readings look like a still robot with a plausible bias.
   // If false after ready(): the robot moved or the sensor is faulty -> do NOT apply the bias.
   bool stationary() const { return ready() && stdDev() <= maxStd_ && fabsf(mean_) <= maxAbs_; }

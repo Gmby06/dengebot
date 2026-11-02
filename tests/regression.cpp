@@ -40,5 +40,10 @@ int main(){
    assert(z.update(0,2,0,0,.01f)==0 && !z.lastUpdateValid());
    z.clearFault(); assert(z.update(0,2,0,0,.01f)!=0 && z.lastUpdateValid()); }
  { EDABalancePID d0(edaDefaultConfig()); d0.update(0,2,NAN,0,.01f); assert(d0.update(0,2,0,0,.01f)!=0); } // varsayilan: V1.5.1 davranisi
+ // v1.7.5: reset() with a non-finite initial rate must not poison the filter state
+ { const float bad[3]={NAN,INFINITY,-INFINITY};
+   for(int i=0;i<3;i++){ EDABalancePID r(edaDefaultConfig()); r.reset(bad[i]);
+     const float o=r.update(0,2,0,0,.01f);
+     assert(!r.faulted() && r.lastUpdateValid() && std::isfinite(o) && o!=0); } }
  return 0;
 }

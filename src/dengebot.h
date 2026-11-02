@@ -9,4 +9,5 @@
 #include "EDAComplementaryFilter.h"
 #include "EDATelemetry.h"
 #include "EDAGyroBiasCalibrator.h"
+#include "EDAPwmCalibration.h"
 #endif

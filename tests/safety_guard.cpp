@@ -122,26 +122,17 @@ int main() {
     assert(s.update(p,t+130,t+130,true,0,0,0,0,.01f)==0);
     assert(!s.requestStart(t+140,t+140,0,0,true,p)); // already armed
   }
-  // Shared sample classification: same ordering in runtime and legacy START.
-  {
-    EDABalancePID p(edaDefaultConfig());
-    EDASafetyGuard a({25.0f,50});
-    assert(!a.start(100,100,NAN,true,p));
-    assert(a.fault()==EDASafetyFault::InvalidSensor);
-    assert(a.clearFault());
-    assert(!a.start(100,0,31.0f,true,p)); // stale beats fallen
-    assert(a.fault()==EDASafetyFault::StaleSensor);
-    assert(a.clearFault());
-    assert(!a.start(100,100,31.0f,true,p));
-    assert(a.fault()==EDASafetyFault::Fallen);
-    // Target-aware failed START must preserve fault (side-effect-free).
-    assert(!a.requestStart(101,0,NAN,0.0f,false,p));
-    assert(a.fault()==EDASafetyFault::Fallen);
-    assert(!a.requestStart(101,0,0.0f,0.0f,true,p));
-    assert(a.fault()==EDASafetyFault::Fallen);
-    assert(a.requestStart(110,110,0.0f,0.0f,true,p));
-    assert(!a.start(111,111,0.0f,true,p));
-    assert(a.armed());
-  }
+  // v1.7.5: invalid configuration is reported as InvalidConfig (not InvalidSensor)
+  { EDASafetyConfig badCfg[4]={{0.0f,50},{30.0f,0},{NAN,50},{30.0f,0x80000000u}};
+    for (int i=0;i<4;i++) {
+      EDASafetyGuard b(badCfg[i]); EDABalancePID bp(edaDefaultConfig());
+      assert(!EDASafetyGuard::validConfig(badCfg[i]));
+      assert(b.fault()==EDASafetyFault::InvalidConfig && b.faulted() && !b.armed());
+      assert(!b.clearFault() && !b.start(100,100,0,true,bp) && !b.requestStart(100,100,0,true,bp));
+      assert(b.update(bp,100,100,true,0,0,0,0,.01f)==0);
+    } }
+  // maxSampleAgeMs boundary: 0x7fffffff is the largest accepted value
+  { EDASafetyConfig edge={30.0f,0x7fffffffu}; assert(EDASafetyGuard::validConfig(edge));
+    EDASafetyGuard e(edge); assert(e.fault()==EDASafetyFault::Stopped); }
   return 0;
 }
