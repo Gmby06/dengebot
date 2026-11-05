@@ -1,6 +1,27 @@
+## v1.7.6 — DEVELOPMENT / NOT RELEASED (STEP/DIR demos)
+
+- Added separate classic-ESP32 motor-only test sketches: `ESP32_A4988_Demo` and `ESP32_DRV8825_Demo`, plus informational driver timing profiles. Neither sketch implements balance control.
+- FIX4: resolved strict `-Werror=reorder` build warning in `EDAStepDirLEDC_ESP32.h` by aligning member initialization with declaration order (already present in this input archive).
+- Removed the redundant nested `PwmCalibrationDemo` example directory (already clean in this input archive).
+- Release preparation: aligned README STEP/DIR GPIO map with sketches (18/19/23/5, EN 33), updated driver demo instructions, and added both new demos to board-compile CI.
+- No change to PID algorithms, DC motor control, legacy safety behavior, or STEP/DIR runtime backend in this preparation pass.
+- Host tests are local software tests, not hardware validation. Arduino board compilation and GitHub Actions are pending independent confirmation.
+
+## v1.7.6 — DEVELOPMENT / NOT RELEASED (phase 1)
+
+- Added an optional, architecture-neutral two-channel STEP/DIR pulse scheduler (`EDAStepDirController.h`).
+- Added ESP32-WROOM motor-only bench test (`ESP32_StepDirFirstTest`) using hardware LEDC (`EDAStepDirLEDC_ESP32.h`). No IMU or PID changes.
+- FIX3: LEDC adapter no longer toggles ENABLE on a pure frequency change (only on start / direction reversal); a single motor's change no longer restarts the other.
+- FIX3: example ramps at 20000 STEP/s^2 from 200 STEP/s (was 5000 STEP/s jumps every 50 ms); rate table gains 200/500/1000; hold time counts after the ramp.
+- FIX3: `StepDirController::setSpeeds()` clamps over-limit speeds instead of rejecting them (a saturated PID output no longer ends in a command timeout). Non-finite input is still rejected.
+- FIX3: `EDASafetyGuard` header documents timestamp order (take `sampleMs` before `nowMs`).
+- FIX3: host test `ledc_adapter` (fake ESP32 core, 2.x and 3.x API paths); CI compiles the ESP32 example on core 2.0.17 and 3.x.
+- Added synthetic frequency/direction/watchdog tests; updated README stale CI statements.
+- Not validated on real motors or oscilloscopes; remaining v1.7.6 scope is not implemented.
+
 # Changelog
 
-## v1.7.5 — Safe PWM Motor Calibration
+## v1.7.5 — Safe PWM Motor Calibration (Community Preview)
 ### Review fixes and release adjustments
 - `PwmCalibration::begin()` now invalidates the stored result of the selected wheel/direction (new `PwmCalibrationResults::clear()`); an aborted or timed-out re-run no longer leaves the old value confirmed. Refused `begin()` calls change nothing; other slots are kept.
 - `PwmCalibration::valid()` rejects `idleTimeoutMs` / `maxSessionMs` above `0x7fffffff` (the wrap-safe comparison treats larger differences as errors). `EDASafetyConfig::maxSampleAgeMs` has the same upper bound in `EDASafetyGuard::validConfig()`.
@@ -83,3 +104,10 @@
 
 - v1.7.2 test: unified `<dengebot.h>` public entry point, preserving separate headers for compatibility.
 
+
+## v1.7.6 development FIX2 (unreleased)
+
+- Added experimental classic-ESP32 LEDC STEP/DIR hardware adapter (two independent channels, 0 and 2), keeping the generic v1.7.5 PID and motor mapping unchanged.
+- Replaced software-ISR STEP output in the ESP32-only bench example. Raised example test stages to 2000 / 5000 / 10000 / 20000 / 40000 STEP/s without changing the portable scheduler's rate contract.
+- Kept 2-second user-triggered bench pulse test, per-direction manual selection, hardware ENABLE pin, bounded command refresh, and optional speed steps for the higher tiers.
+- Physical rotation/frequency verification is still pending; no claim of A4988, NEMA17 or industrial-driver compatibility in real hardware.

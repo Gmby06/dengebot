@@ -36,4 +36,10 @@ for BOARD in ARDUINO_AVR_LEONARDO ARDUINO_AVR_GEMMA ARDUINO_AVR_PRO; do
 done
 c++ -std=c++11 -Wall -Wextra -Werror $SAN -I"$ROOT/src" "$ROOT/tests/pwm_calibration.cpp" -o "$TMP/pwm_calibration"
 "$TMP/pwm_calibration"
-echo 'All host tests passed'
+c++ -std=c++11 -Wall -Wextra -Werror $SAN -I"$ROOT/src" "$ROOT/tests/step_dir.cpp" -o "$TMP/step_dir"
+"$TMP/step_dir"
+for MAJ in 2 3; do
+  c++ -std=c++11 -Wall -Wextra -Werror $SAN -DFAKE_ESP_MAJOR=$MAJ -I"$ROOT/tests/fake_esp32" -I"$ROOT/src" "$ROOT/tests/ledc_adapter.cpp" -o "$TMP/ledc_adapter$MAJ"
+  "$TMP/ledc_adapter$MAJ"
+done
+echo 'All host tests passed' 

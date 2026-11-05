@@ -8,6 +8,9 @@
 // Optional, hardware-independent STOP/FAULT interlock.
 // Time units: milliseconds from the SAME monotonic clock (e.g. millis()).
 // Caller MUST supply a real IMU sample timestamp, not simply 'now' each loop.
+// ORDER MATTERS: take sampleMs FIRST, then nowMs = millis(). A sampleMs newer than
+// nowMs (e.g. now=millis(); readIMU(); sampleMs=millis();) is rejected as a
+// future timestamp and latches StaleSensor.
 // Caller MUST still disable motor-driver EN/PWM in hardware/application on STOP/FAULT.
 enum class EDASafetyFault : uint8_t {
   None, Stopped, StaleSensor, InvalidSensor, Fallen, ControllerFault,

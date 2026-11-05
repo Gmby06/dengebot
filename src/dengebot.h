@@ -10,4 +10,5 @@
 #include "EDATelemetry.h"
 #include "EDAGyroBiasCalibrator.h"
 #include "EDAPwmCalibration.h"
+#include "EDAStepDirController.h"
 #endif

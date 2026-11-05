@@ -1,11 +1,17 @@
-# dengebot v1.7.5 — Community Preview verification status
+# dengebot v1.7.6 — GitHub yayın adayı kontrol durumu (2026-11-05)
 
-- This archive is **prepared for publication**; publication itself and GitHub Actions results must be confirmed on GitHub.
-- `library.properties` version: **1.7.5**. Tag/release title should be **v1.7.5**.
-- Local host tests, fake-Arduino demo tests, and ASan/UBSan: run before packaging; record the actual result in the release response.
-- Arduino IDE compilation: project owner reports PASS on a broad selection of AVR, ESP32 and ESP8266 boards for prior v1.7.5 review code. **This exact final archive's 150 ms demo change has not been compiled on target hardware here.**
-- Real Nano + L298N calibration: owner measured breakaway thresholds across left/right, forward/reverse; thresholds vary with motor, power, mechanical condition, and pulse duration. Physical evidence is limited to that setup.
-- Motor waveform, independent EN disable on MCU stall and multi-robot validation: **NOT VERIFIED**.
-- `PwmCalibrationDemo`: Nano/Uno/Mega only, pins: ENA D5 IN1 D4 IN2 D7; ENB D6 IN3 D8 IN4 D9. Test pulse **150 ms**; library default **120 ms**; cooldown 500 ms.
-- IMPORTANT: Standalone software guard cannot cut motor power during MCU/loop lockup. Implement independent hardware disable and an accessible motor power disconnect. Wheels raised for calibration.
-- PID math, SafetyGuard fault defaults and public API remain compatible; see CHANGELOG for additive defensive fixes.
+**Durum:** Geliştirme adayı; GitHub sürümü yayımlanmadı. Yayın kararı için aşağıdaki eksik doğrulamalar tamamlanmalıdır.
+
+- `library.properties`: 1.7.6; önceki yayımlanmış referans: v1.7.5.
+- Önceki `(6)` paketinde bildirilen `-Werror=reorder` FIX4 hatası, kaynak `(7)` paketinde önceden düzeltilmişti.
+- İç içe tekrarlanan `examples/PwmCalibrationDemo/PwmCalibrationDemo` klasörü `(7)` paketinde yoktu.
+- A4988 ve DRV8825 için ayrı örnekler mevcuttur: `ESP32_A4988_Demo` ve `ESP32_DRV8825_Demo`.
+- Klasik ESP32 demo pinleri: SOL STEP=18 DIR=19; SAĞ STEP=23 DIR=5; ortak ENABLE=33 (aktif LOW). Diğer kartlarda örnekler boştur (pin sürmez).
+- CI board derleme matrisine iki örnek eklendi; **GitHub Actions çıktıları henüz doğrulanmadı**.
+- **Yerel test sonuçları:** Son paketin test kayıtlarına ve teslim mesajına bakın. Host testleri gerçek ESP32 kart derlemesi yerine geçmez.
+- **Arduino-ESP32 2.0.17 ve 3.0.7 gerçek kart derlemesi:** bu ortamda Arduino CLI yoksa doğrulanamaz; GitHub CI'da tamamlanmalıdır.
+- **Gerçek A4988/DRV8825 kablo, STEP dalga formu, hız, akım, ısınma ve bağımsız acil durdurma:** bu revizyon için doğrulanmadı.
+- PID, sensör füzyonu, DC PWM kodları ve STEP/DIR motor sürme mantığı bu yayın hazırlığında değiştirilmedi.
+- Motor testinde tekerlekleri havaya kaldırın, sürücü akım limitini ayarlayın, 3.3V mantık uyumluluğunu doğrulayın, ENABLE'a harici 10k pull-up ve bağımsız güç kesme kullanın. MCU kilitlenirse yazılım watchdog'u çalışmaz.
+
+**GitHub açıklaması (TR):** A4988 ve DRV8825 motor sürücüleri için ayrı demolar eklendi ve gerekli düzeltmeler yapıldı.
