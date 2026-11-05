@@ -21,6 +21,8 @@ jobs:
             fqbn: esp32:esp32:esp32
           - core: esp32:esp32@2.0.17
             fqbn: esp32:esp32:esp32s3
+          - core: esp32:esp32@3.0.7
+            fqbn: esp32:esp32:esp32
     steps:
       - uses: actions/checkout@v4
       - uses: arduino/setup-arduino-cli@v2
@@ -41,6 +43,9 @@ jobs:
           arduino-cli compile --fqbn '${{ matrix.fqbn }}' --library . examples/DeadZoneDemo
           arduino-cli compile --fqbn '${{ matrix.fqbn }}' --library . examples/SafetyGuardDemo
           arduino-cli compile --fqbn '${{ matrix.fqbn }}' --library . examples/PwmCalibrationDemo
+          arduino-cli compile --fqbn '${{ matrix.fqbn }}' --library . examples/ESP32_StepDirFirstTest
+          arduino-cli compile --fqbn '${{ matrix.fqbn }}' --library . examples/ESP32_A4988_Demo
+          arduino-cli compile --fqbn '${{ matrix.fqbn }}' --library . examples/ESP32_DRV8825_Demo
 
   gemma:
     # Gemma / ATtiny85 has no Serial: only the inert PWM demo must compile there.
@@ -53,6 +58,5 @@ jobs:
           arduino-cli config init
           arduino-cli config add board_manager.additional_urls https://adafruit.github.io/arduino-board-index/package_adafruit_index.json
           arduino-cli core update-index
-          arduino-cli core install arduino:avr@1.8.6
           arduino-cli core install adafruit:avr
           arduino-cli compile --fqbn adafruit:avr:gemma --library . examples/PwmCalibrationDemo
