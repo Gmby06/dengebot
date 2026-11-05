@@ -2,13 +2,13 @@
 
 **Arduino-compatible control library for two-wheel self-balancing robots.**
 
-**Published release: v1.7.5 — Safe PWM Motor Calibration (Community Preview)**
+**Latest pre-release: [v1.7.6 — A4988 & DRV8825 STEP/DIR Support](https://github.com/Gmby06/dengebot/releases/tag/v1.7.6)**
 
-**Current development candidate: v1.7.6 — ESP32 STEP/DIR demos for A4988 and DRV8825 (not released).**
+**Previous pre-release: [v1.7.5 — Safe PWM Motor Calibration](https://github.com/Gmby06/dengebot/releases/tag/v1.7.5)**
 
-[v1.7.5 releases](https://github.com/Gmby06/dengebot/releases/tag/v1.7.5) · [Examples](examples) · [Changelog](CHANGELOG.md) · [Report an issue](https://github.com/Gmby06/dengebot/issues) · [MIT License](LICENSE)
+[Latest pre-release](https://github.com/Gmby06/dengebot/releases/tag/v1.7.6) · [Examples](examples) · [Changelog](CHANGELOG.md) · [Report an issue](https://github.com/Gmby06/dengebot/issues) · [MIT License](LICENSE)
 
-`dengebot` provides reusable, hardware-independent balancing control, sensor-fusion helpers, motor-command mapping, telemetry, and optional software STOP/FAULT safety checks. **It is a library, not a complete robot firmware or IMU driver; the experimental v1.7.6 module also requires a hardware-specific timing and GPIO backend.** Your application supplies the sensor readings, timing, physical motor outputs, and hardware protections.
+`dengebot` provides reusable, hardware-independent balancing control, sensor-fusion helpers, motor-command mapping, telemetry, and optional software STOP/FAULT safety checks. **It is a library, not a complete robot firmware or IMU driver; the v1.7.6 STEP/DIR module also requires a hardware-specific timing and GPIO backend.** Your application supplies the sensor readings, timing, physical motor outputs, and hardware protections.
 
 ## Highlights
 
@@ -22,7 +22,15 @@
 
 All optional features require explicit integration by the calling sketch; simply including a header does not activate motors or protections.
 
-## What's new in v1.7.5
+## What's new in v1.7.6
+
+- Separate [A4988](examples/ESP32_A4988_Demo) and [DRV8825](examples/ESP32_DRV8825_Demo) motor-only demos for classic ESP32, plus the [STEP/DIR first test](examples/ESP32_StepDirFirstTest).
+- FIX4 LEDC member-initialization order correction and removal of a duplicate PWM calibration example directory.
+- Updated STEP/DIR documentation, pin mapping, and CI matrix for Arduino-ESP32 2.0.17 and 3.0.7.
+- GitHub Actions host tests and all configured Arduino board compilation jobs passed on commit `66611f6`. These are software checks, **not** real A4988/DRV8825 motor or balancing validation.
+- No changes to existing PID, sensor fusion, DC motor runtime control, or safety behavior in the final release-preparation pass.
+
+## Previously added in v1.7.5
 
 - Operator-confirmed PWM breakaway calibration for each motor and direction, with bounded test pulses, STOP and fault handling.
 - The **PwmCalibrationDemo** uses a **150 ms** test pulse (example-specific setting). The library's default `PwmCalibrationConfig` pulse remains **120 ms** for backward compatibility.
@@ -34,10 +42,9 @@ All optional features require explicit integration by the calling sketch; simply
 See [CHANGELOG.md](CHANGELOG.md) for full changes and previous releases.
 
 
-## v1.7.6 development — STEP/DIR A4988 and DRV8825 demos (NOT a release)
+## v1.7.6 STEP/DIR — A4988 and DRV8825 demos (pre-release)
 
-This development snapshot builds on the **published v1.7.5 release**.
-The public README release heading deliberately remains v1.7.5 until v1.7.6 passes its acceptance tests.
+This **published pre-release** builds on v1.7.5. GitHub Actions software checks passed, while electrical and real-motor testing remain pending.
 
 **Added:** `EDAStepDirController.h` — a portable two-channel integer-only
 STEP/DIR pulse scheduler. It accepts signed steps/second, handles separate
@@ -61,7 +68,7 @@ inputs (e.g. some TB6600/DM-series) may require level shifting and different
 pulse polarity/width. Microstep and motor current must be set on the driver.
 Do not connect motor power until you have verified driver requirements.
 
-**Limitations:** development build. Informational A4988/DRV8825 driver profiles are
+**Limitations:** experimental STEP/DIR feature in a pre-release. Informational A4988/DRV8825 driver profiles are
 available, but they do not configure hardware or enforce individual pulse timings.
 There is no AVR interrupt backend, no measured STEP output, no motor-load
 verification and no physical hardware STOP certification. The command watchdog
@@ -72,11 +79,11 @@ and an immediately accessible physical power disconnect are required.
 
 `tests/step_dir.cpp` covers output frequency simulation, directions,
 reversal, STOP, arming, invalid inputs and command timeout. Run
-`sh tests/run_host_tests.sh`. Physical build and bench test remain pending.
+`sh tests/run_host_tests.sh`. GitHub Actions board compilation passed for the current pre-release; physical bench validation remains pending.
 
 ## Installation
 
-1. Download the **v1.7.5 release ZIP** from [Releases](https://github.com/Gmby06/dengebot/releases/tag/v1.7.5). For the unfinished v1.7.6 STEP/DIR prototype use its separate development ZIP.
+1. Download the **v1.7.6 pre-release** from [Releases](https://github.com/Gmby06/dengebot/releases/tag/v1.7.6), or choose [v1.7.5](https://github.com/Gmby06/dengebot/releases/tag/v1.7.5) if you only need the earlier PWM-calibration preview. Use the source-code ZIP or a library ZIP with `library.properties` at the library root.
 2. In Arduino IDE, choose **Sketch → Include Library → Add .ZIP Library**, then select the library ZIP.
 3. Include the unified public header:
 
@@ -96,7 +103,7 @@ The release CI builds the library examples for these boards:
 | Arduino Nano | ESP32 |
 | Arduino Mega 2560 | ESP32-S3 |
 
-The v1.7.5 release CI passed its configured board builds; physical STEP/DIR balancing is not yet validated. **Compilation is not a claim of physical balancing or safety validation for every board and motor driver.** Physical safety integration has been tested on one Arduino Nano robot (see [Validation](#validation-and-limitations)).
+The v1.7.6 pre-release CI passed all configured example-compilation jobs (including both ESP32 core versions and Gemma); physical STEP/DIR balancing is not yet validated. **Compilation is not a claim of physical balancing or safety validation for every board and motor driver.** Physical safety integration has been tested on one Arduino Nano robot (see [Validation](#validation-and-limitations)).
 
 ## Examples
 
@@ -215,8 +222,9 @@ float command = safety.update(pid, nowMs, imuSampleTimestampMs,
 
 ## Validation and limitations
 
-- v1.7.5 host regression tests passed; sanitizer results depend on the execution environment.
-- v1.7.5 GitHub Actions passed example-compilation targets on Uno, Nano, Mega 2560, ESP8266, ESP32 and ESP32-S3; Gemma has a separate inert demo build.
+- v1.7.6 host regression tests and GitHub Actions host workflow passed on commit `66611f6`; sanitizer outcomes depend on the execution environment.
+- v1.7.6 GitHub Actions passed example-compilation jobs for Uno, Nano, Mega 2560, ESP8266, classic ESP32 (cores 2.0.17 and 3.0.7), and ESP32-S3 (cores 2.0.17 and 3.0.7). Gemma passed its separate inert-demo build.
+- A4988, DRV8825 and first STEP/DIR demo sketches are compiled in the ESP32 jobs. On ESP32-S3 they compile as inert stubs, so this does not validate STEP pulses on ESP32-S3.
 - An Arduino Nano-based two-wheel robot was tested for operator START/STOP, fall-angle shutdown, and FAULT recovery without rebooting.
 - These tests are **not** a hardware safety certification. Other boards, drivers, IMU orientations, and motor configurations require independent physical testing. Stepper/NEMA17 physical balancing behavior remains unvalidated.
 
@@ -232,7 +240,7 @@ When reporting issues, include your board, IMU, motor driver, motor type, librar
 
 ## Roadmap
 
-**v1.7.5 Community Preview:** optional PWM breakaway calibration is included in that published release. Its GitHub Actions checks passed; this is not evidence of STEP/DIR physical balancing on ESP32 or of multi-board hardware safety. v1.7.6 remains under development.
+**v1.7.6 pre-release:** A4988/DRV8825 STEP/DIR demos and CI compatibility checks are published. Next steps are physical pulse waveform, motor rotation, load/current/thermal, and hardware STOP verification before making stronger hardware-support claims. **v1.7.5** remains available as the earlier PWM-calibration preview.
 
 ## License and attribution
 
@@ -258,6 +266,6 @@ Serial controls (115200 baud, "No line ending"): `1` left forward, `2` left reve
 
 **Status.** Host tests cover the state machine and, through a fake Arduino, the demo sketch itself. The v1.7.5 release CI passed; these tests do not verify real PWM waveforms, physical cutoff or other hardware.
 
-### v1.7.6 development: ESP32 STEP/DIR FIX3/FIX4 (experimental)
+### v1.7.6 pre-release: ESP32 STEP/DIR FIX3/FIX4 (experimental)
 
 A dedicated classic ESP32 LEDC adapter, `EDAStepDirLEDC_ESP32.h`, supplies **hardware-generated** STEP waveforms for two STEP/DIR motors. The example `ESP32_StepDirFirstTest` uses a user-invoked ramp + two-second hold at 200–40000 requested STEP/s; it is not a balancing firmware. Arduino-ESP32 2.x and 3.x LEDC API differences are handled conditionally. The separate portable `EDAStepDirController.h` scheduler is unchanged (its default rate cap remains 4000; over-limit requests are now clamped, not rejected), and the v1.7.5 PID is unchanged. This feature is pending physical rotation and pulse-frequency validation; electrical levels and ENABLE polarity depend on the external driver. See `V1_7_6_STEPDIR_FIX3_NOTES.md` and `DRV8825_UYUMLULUK_TR.md`.
