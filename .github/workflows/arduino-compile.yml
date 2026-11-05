@@ -23,6 +23,8 @@ jobs:
             fqbn: esp32:esp32:esp32s3
           - core: esp32:esp32@3.0.7
             fqbn: esp32:esp32:esp32
+          - core: esp32:esp32@3.0.7
+            fqbn: esp32:esp32:esp32s3
     steps:
       - uses: actions/checkout@v4
       - uses: arduino/setup-arduino-cli@v2
@@ -43,6 +45,12 @@ jobs:
           arduino-cli compile --fqbn '${{ matrix.fqbn }}' --library . examples/DeadZoneDemo
           arduino-cli compile --fqbn '${{ matrix.fqbn }}' --library . examples/SafetyGuardDemo
           arduino-cli compile --fqbn '${{ matrix.fqbn }}' --library . examples/PwmCalibrationDemo
+      # These demos use the ESP32 STEP/DIR backend. A4988/DRV8825 motor
+      # routines are active on classic ESP32; ESP32-S3 builds use inert stubs.
+      # Compiling here checks API/conditional compilation, NOT real motor output.
+      - name: Compile ESP32 STEP/DIR demos
+        if: startsWith(matrix.fqbn, 'esp32:esp32:')
+        run: |
           arduino-cli compile --fqbn '${{ matrix.fqbn }}' --library . examples/ESP32_StepDirFirstTest
           arduino-cli compile --fqbn '${{ matrix.fqbn }}' --library . examples/ESP32_A4988_Demo
           arduino-cli compile --fqbn '${{ matrix.fqbn }}' --library . examples/ESP32_DRV8825_Demo
